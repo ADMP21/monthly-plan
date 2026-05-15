@@ -50,6 +50,9 @@ const monthFormatter = new Intl.DateTimeFormat("th-TH", {
   month: "long",
   year: "numeric",
 });
+const weekdayFormatter = new Intl.DateTimeFormat("th-TH", {
+  weekday: "short",
+});
 
 let activeUser = null;
 let viewedDate = new Date();
@@ -115,6 +118,30 @@ function showCalendar() {
   renderCalendar();
 }
 
+function createActivityCard(activity, activityIndex) {
+  const item = document.createElement("div");
+  item.className = `activity-chip status-${activity.status || "planned"}`;
+
+  const order = document.createElement("span");
+  order.className = "activity-order";
+  order.textContent = activityIndex + 1;
+
+  const textWrap = document.createElement("span");
+  textWrap.className = "activity-text";
+
+  const title = document.createElement("span");
+  title.className = "activity-title";
+  title.textContent = activity.title || "ไม่มีหัวข้อ";
+
+  const detail = document.createElement("span");
+  detail.className = "activity-detail";
+  detail.textContent = activity.detail || "ไม่มีรายละเอียด";
+
+  textWrap.append(title, detail);
+  item.append(order, textWrap);
+  return item;
+}
+
 function renderCalendar() {
   const firstDay = monthStart(viewedDate);
   const gridStart = new Date(firstDay);
@@ -152,6 +179,11 @@ function renderCalendar() {
     number.textContent = cellDate.getDate();
     dateHeader.append(number);
 
+    const weekday = document.createElement("span");
+    weekday.className = "day-weekday";
+    weekday.textContent = weekdayFormatter.format(cellDate);
+    dateHeader.append(weekday);
+
     if (activities.length) {
       const badge = document.createElement("span");
       badge.className = "activity-count";
@@ -164,23 +196,9 @@ function renderCalendar() {
     if (activities.length) {
       const preview = document.createElement("div");
       preview.className = "activity-preview";
-
       activities.forEach((activity, activityIndex) => {
-        const item = document.createElement("div");
-        item.className = `activity-chip status-${activity.status || "planned"}`;
-
-        const order = document.createElement("span");
-        order.className = "activity-order";
-        order.textContent = activityIndex + 1;
-
-        const text = document.createElement("span");
-        text.className = "activity-title";
-        text.textContent = activity.title || activity.detail || "ไม่มีหัวข้อ";
-
-        item.append(order, text);
-        preview.append(item);
+        preview.append(createActivityCard(activity, activityIndex));
       });
-
       button.append(preview);
     } else {
       const hint = document.createElement("div");

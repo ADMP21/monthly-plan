@@ -25,6 +25,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     linear-gradient(135deg, rgba(19, 111, 99, 0.08), transparent 34%),
     linear-gradient(180deg, #f7f3e9 0%, var(--bg) 100%);
@@ -46,6 +47,7 @@ button {
   cursor: pointer;
   min-height: 42px;
   padding: 0 16px;
+  touch-action: manipulation;
 }
 
 button:hover {
@@ -225,7 +227,7 @@ select:focus {
 
 .desk-calendar {
   position: relative;
-  padding-top: 30px;
+  padding-top: 42px;
 }
 
 .desk-calendar::after {
@@ -243,7 +245,7 @@ select:focus {
 
 .binder {
   position: absolute;
-  top: 0;
+  top: 6px;
   left: 50%;
   display: flex;
   gap: clamp(28px, 7vw, 96px);
@@ -253,7 +255,7 @@ select:focus {
 
 .binder span {
   width: 24px;
-  height: 58px;
+  height: 48px;
   border: 6px solid #52616f;
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
@@ -268,18 +270,18 @@ select:focus {
 }
 
 .calendar-panel::before {
-  content: "";
-  display: block;
-  height: 72px;
-  margin: 0 -18px 16px;
-  background: linear-gradient(90deg, #155e54, #1b7b6d 48%, #bd5b3a);
+  content: none;
 }
 
 .month-header {
+  position: relative;
+  z-index: 3;
   justify-content: space-between;
   gap: 16px;
-  margin-top: -64px;
-  padding: 0 4px 20px;
+  margin: 0 -18px 16px;
+  min-height: 104px;
+  padding: 34px 22px 20px;
+  background: linear-gradient(90deg, #155e54, #1b7b6d 48%, #bd5b3a);
   color: #fff;
 }
 
@@ -334,12 +336,12 @@ select:focus {
 
 .day-cell {
   position: relative;
-  min-height: 148px;
+  min-height: 178px;
   border: 0;
   border-right: 1px solid var(--line);
   border-top: 1px solid var(--line);
   background: rgba(255, 253, 248, 0.92);
-  padding: 10px;
+  padding: 8px;
   text-align: left;
 }
 
@@ -362,6 +364,11 @@ select:focus {
 }
 
 .date-line {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  min-height: 26px;
   justify-content: space-between;
   gap: 8px;
 }
@@ -369,10 +376,19 @@ select:focus {
 .day-number {
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  font-size: 13px;
   font-weight: 900;
+}
+
+.day-weekday {
+  display: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  margin-right: auto;
 }
 
 .today .day-number {
@@ -384,28 +400,28 @@ select:focus {
   border-radius: 999px;
   background: #ead9bd;
   color: #6a4731;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  padding: 3px 8px;
+  padding: 2px 7px;
 }
 
 .activity-preview {
-  margin-top: 10px;
+  margin-top: 30px;
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .activity-chip {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  align-items: center;
-  gap: 7px;
-  min-height: 28px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  min-height: 40px;
   border-left: 4px solid currentColor;
   border-radius: 7px;
   background: #fff;
   color: var(--terracotta);
-  padding: 5px 7px 5px 5px;
+  padding: 6px 7px 6px 5px;
   box-shadow: 0 4px 12px rgba(36, 48, 58, 0.08);
 }
 
@@ -420,13 +436,19 @@ select:focus {
 .activity-order {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: currentColor;
   color: #fff;
   font-size: 12px;
   font-weight: 900;
+}
+
+.activity-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .activity-title {
@@ -438,8 +460,20 @@ select:focus {
   white-space: nowrap;
 }
 
+.activity-detail {
+  color: var(--muted);
+  display: -webkit-box;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .empty-hint {
-  margin-top: 14px;
+  margin-top: 34px;
   color: #9aa4b2;
   font-size: 13px;
   font-weight: 800;
@@ -531,8 +565,8 @@ select:focus {
 
 @media (max-width: 760px) {
   .app-shell {
-    width: min(100vw - 20px, 680px);
-    padding-top: 16px;
+    width: min(100vw - 18px, 680px);
+    padding: 14px 0 28px;
   }
 
   .auth-view {
@@ -546,12 +580,28 @@ select:focus {
     flex-direction: column;
   }
 
+  .brand h1,
+  .topbar h1 {
+    font-size: 38px;
+  }
+
+  .brand p {
+    font-size: 16px;
+  }
+
   .topbar-actions {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  #logoutButton {
+    grid-column: 1 / -1;
   }
 
   .desk-calendar {
-    padding-top: 24px;
+    padding-top: 36px;
   }
 
   .binder {
@@ -560,31 +610,78 @@ select:focus {
 
   .binder span {
     width: 18px;
-    height: 46px;
+    height: 40px;
     border-width: 5px;
   }
 
   .calendar-panel {
     padding: 0 10px 12px;
-    overflow-x: auto;
-  }
-
-  .calendar-panel::before {
-    margin: 0 -10px 14px;
+    overflow: visible;
   }
 
   .month-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 10px;
+    margin: 0 -10px 14px;
+    min-height: 120px;
+    padding: 40px 16px 18px;
   }
 
-  .weekday-grid,
+  .plan-count {
+    white-space: normal;
+  }
+
+  .weekday-grid {
+    display: none;
+  }
+
   .calendar-grid {
-    min-width: 820px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border-left: 0;
   }
 
   .day-cell {
-    min-height: 132px;
+    min-height: 118px;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(36, 48, 58, 0.08);
+  }
+
+  .date-line {
+    justify-content: flex-start;
+  }
+
+  .day-weekday {
+    display: inline-flex;
+  }
+
+  .activity-count {
+    margin-left: auto;
+  }
+
+  .day-cell.outside {
+    display: none;
+  }
+
+  .activity-chip {
+    min-height: 44px;
+  }
+
+  .activity-title {
+    white-space: normal;
+    display: -webkit-box;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .activity-detail {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
   }
 
   .plan-dialog footer {
