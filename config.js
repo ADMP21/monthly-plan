@@ -1,0 +1,4 @@
+window.MONTHLY_PLAN_CONFIG = {
+  supabaseUrl: "https://jnmnyluknmugyyxagexu.supabase.co",
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpubW55bHVrbm11Z3l5eGFnZXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MDM1ODEsImV4cCI6MjA5NDM3OTU4MX0.tS9XDM6VHH7uLn5YVq42IeHjrBLrnufKxWb5EDzVGAo",
+};

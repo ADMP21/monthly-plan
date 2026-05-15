@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monthly Plan</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="authView" class="auth-view" aria-labelledby="authTitle">
+        <div class="brand">
+          <p class="eyebrow">Private Monthly Planner</p>
+          <h1 id="authTitle">Monthly Plan</h1>
+          <p>เข้าสู่ระบบเพื่อดูและแก้ไขแผนรายเดือนของคุณเท่านั้น</p>
+        </div>
+
+        <form id="authForm" class="auth-card">
+          <label>
+            Email
+            <input id="emailInput" name="email" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Password
+            <input id="passwordInput" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <div class="auth-actions">
+            <button type="submit" class="primary">เข้าสู่ระบบ</button>
+            <button type="button" id="registerButton">สมัครผู้ใช้ใหม่</button>
+          </div>
+          <p id="authMessage" class="message" role="status"></p>
+        </form>
+      </section>
+
+      <section id="calendarView" class="calendar-view hidden" aria-label="Monthly plan calendar">
+        <header class="topbar">
+          <div>
+            <p id="currentUserLabel" class="eyebrow"></p>
+            <h1>Monthly Plan</h1>
+          </div>
+          <div class="topbar-actions">
+            <button id="prevMonthButton" class="icon-button" aria-label="Previous month">‹</button>
+            <button id="todayButton">เดือนนี้</button>
+            <button id="nextMonthButton" class="icon-button" aria-label="Next month">›</button>
+            <button id="logoutButton">ออกจากระบบ</button>
+          </div>
+        </header>
+        <p id="calendarMessage" class="calendar-message" role="status"></p>
+
+        <section class="desk-calendar">
+          <div class="binder">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="calendar-panel">
+            <div class="month-header">
+              <div>
+                <p class="eyebrow">Desk Calendar</p>
+                <h2 id="monthLabel"></h2>
+              </div>
+              <div id="planCount" class="plan-count"></div>
+            </div>
+            <div class="weekday-grid" aria-hidden="true">
+              <span>อา.</span>
+              <span>จ.</span>
+              <span>อ.</span>
+              <span>พ.</span>
+              <span>พฤ.</span>
+              <span>ศ.</span>
+              <span>ส.</span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="planDialog" class="plan-dialog">
+      <form id="planForm" method="dialog">
+        <header>
+          <div>
+            <p class="eyebrow">เพิ่มได้สูงสุด 3 กิจกรรม</p>
+            <h2 id="dialogDateLabel"></h2>
+          </div>
+          <button type="button" id="closeDialogButton" class="icon-button" aria-label="Close">×</button>
+        </header>
+
+        <div class="activity-list" id="activityFormList"></div>
+
+        <footer>
+          <button type="button" id="clearActivitiesButton" class="danger">ล้างวันนี้</button>
+          <div>
+            <button type="button" id="cancelPlanButton">ยกเลิก</button>
+            <button type="submit" class="primary">บันทึก</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
