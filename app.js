@@ -26,6 +26,7 @@ const planCount = document.querySelector("#planCount");
 const prevMonthButton = document.querySelector("#prevMonthButton");
 const nextMonthButton = document.querySelector("#nextMonthButton");
 const todayButton = document.querySelector("#todayButton");
+const printMonthButton = document.querySelector("#printMonthButton");
 const planDialog = document.querySelector("#planDialog");
 const planForm = document.querySelector("#planForm");
 const dialogDateLabel = document.querySelector("#dialogDateLabel");
@@ -394,6 +395,11 @@ nextMonthButton.addEventListener("click", async () => {
 todayButton.addEventListener("click", async () => {
   viewedDate = new Date();
   await loadPlansForViewedMonth();
+});
+
+printMonthButton.addEventListener("click", () => {
+  document.title = `Monthly Plan - ${monthLabel.textContent}`;
+  window.print();
 });
 
 calendarGrid.addEventListener("click", (event) => {

@@ -693,3 +693,165 @@ select:focus {
     justify-content: flex-end;
   }
 }
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #fff;
+    color: #111827;
+  }
+
+  button {
+    border: 0;
+  }
+
+  .auth-view,
+  .topbar,
+  .calendar-message,
+  .binder,
+  .desk-calendar::after,
+  .plan-dialog {
+    display: none !important;
+  }
+
+  .app-shell {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .calendar-view {
+    display: block !important;
+  }
+
+  .desk-calendar {
+    padding: 0;
+  }
+
+  .calendar-panel {
+    overflow: visible;
+    padding: 0;
+    border: 1px solid #d8c6aa;
+    box-shadow: none;
+  }
+
+  .month-header {
+    min-height: auto;
+    margin: 0;
+    padding: 12px 16px;
+    color: #fff;
+  }
+
+  .month-header h2 {
+    font-size: 28px;
+  }
+
+  .plan-count {
+    border-color: rgba(255, 255, 255, 0.55);
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .weekday-grid,
+  .calendar-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    min-width: 0 !important;
+  }
+
+  .weekday-grid {
+    border-radius: 0;
+  }
+
+  .weekday-grid span {
+    min-height: 28px;
+    font-size: 12px;
+  }
+
+  .calendar-grid {
+    gap: 0 !important;
+    border-left: 1px solid var(--line) !important;
+  }
+
+  .day-cell {
+    display: block !important;
+    min-height: 102px !important;
+    border-radius: 0 !important;
+    border: 0;
+    border-top: 1px solid var(--line) !important;
+    border-right: 1px solid var(--line) !important;
+    box-shadow: none !important;
+    padding: 6px !important;
+    page-break-inside: avoid;
+  }
+
+  .day-cell:nth-last-child(-n + 7) {
+    border-bottom: 1px solid var(--line) !important;
+  }
+
+  .date-line {
+    top: 5px;
+    left: 6px;
+    right: 6px;
+    min-height: 20px;
+  }
+
+  .day-number {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+
+  .day-weekday {
+    display: none !important;
+  }
+
+  .activity-count {
+    font-size: 9px;
+    padding: 1px 5px;
+  }
+
+  .activity-preview {
+    margin-top: 24px;
+    gap: 3px;
+  }
+
+  .activity-chip {
+    min-height: 24px;
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 5px;
+    border-left-width: 3px;
+    border-radius: 4px;
+    padding: 3px 5px 3px 3px;
+    box-shadow: none;
+  }
+
+  .activity-order {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
+  .activity-title {
+    font-size: 10px;
+  }
+
+  .activity-detail {
+    font-size: 9px;
+    line-height: 1.18;
+    -webkit-line-clamp: 2;
+  }
+
+  .empty-hint {
+    display: none;
+  }
+}
