@@ -897,6 +897,16 @@ select:focus {
     border-bottom: 1px solid var(--line) !important;
   }
 
+  .day-cell.outside {
+    background: #fff !important;
+  }
+
+  .day-cell.outside .date-line,
+  .day-cell.outside .activity-preview,
+  .day-cell.outside .empty-hint {
+    display: none !important;
+  }
+
   .date-line {
     top: 3px;
     left: 4px;
