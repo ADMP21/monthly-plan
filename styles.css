@@ -777,12 +777,18 @@ select:focus {
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 6mm;
   }
 
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
   }
 
   body {
@@ -823,24 +829,25 @@ select:focus {
     padding: 0;
     border: 1px solid #d8c6aa;
     box-shadow: none;
+    height: 185mm;
   }
 
   .month-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    min-height: auto;
+    min-height: 24mm;
     margin: 0;
-    padding: 12px 16px;
+    padding: 6mm 7mm 4mm;
     color: #fff;
   }
 
   .month-header h2 {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .active-crop-label {
     max-width: 360px;
-    font-size: 30px;
+    font-size: 28px;
   }
 
   .plan-count {
@@ -858,27 +865,31 @@ select:focus {
 
   .weekday-grid {
     border-radius: 0;
+    height: 8mm;
   }
 
   .weekday-grid span {
-    min-height: 28px;
+    min-height: 8mm;
     font-size: 12px;
   }
 
   .calendar-grid {
     gap: 0 !important;
     border-left: 1px solid var(--line) !important;
+    grid-template-rows: repeat(6, 1fr);
+    height: 153mm;
   }
 
   .day-cell {
     display: block !important;
-    min-height: 178px !important;
+    min-height: 0 !important;
+    height: auto !important;
     border-radius: 0 !important;
     border: 0;
     border-top: 1px solid var(--line) !important;
     border-right: 1px solid var(--line) !important;
     box-shadow: none !important;
-    padding: 6px !important;
+    padding: 4px !important;
     page-break-inside: avoid;
   }
 
@@ -887,16 +898,16 @@ select:focus {
   }
 
   .date-line {
-    top: 5px;
-    left: 6px;
-    right: 6px;
-    min-height: 20px;
+    top: 3px;
+    left: 4px;
+    right: 4px;
+    min-height: 18px;
   }
 
   .day-number {
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
   }
 
   .day-weekday {
@@ -909,24 +920,24 @@ select:focus {
   }
 
   .activity-preview {
-    margin-top: 30px;
-    gap: 6px;
+    margin-top: 21px;
+    gap: 2px;
   }
 
   .activity-chip {
-    min-height: 64px;
-    grid-template-columns: 28px minmax(0, 1fr);
-    gap: 10px;
+    min-height: 0;
+    grid-template-columns: 17px minmax(0, 1fr);
+    gap: 4px;
     border-left-width: 3px;
     border-radius: 4px;
-    padding: 3px 5px 3px 3px;
+    padding: 2px 4px 2px 2px;
     box-shadow: none;
   }
 
   .activity-order {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
+    width: 17px;
+    height: 17px;
+    font-size: 9px;
   }
 
   .activity-title {
@@ -940,9 +951,9 @@ select:focus {
   }
 
   .activity-detail-only {
-    font-size: 28px;
-    line-height: 1.08;
-    -webkit-line-clamp: 3;
+    font-size: 15px;
+    line-height: 1.1;
+    -webkit-line-clamp: 2;
   }
 
   .empty-hint {
