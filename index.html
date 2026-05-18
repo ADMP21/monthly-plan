@@ -48,6 +48,13 @@
         </header>
         <p id="calendarMessage" class="calendar-message" role="status"></p>
 
+        <nav class="crop-tabs" aria-label="เลือกกิจกรรมหลัก">
+          <button class="crop-tab active" type="button" data-crop="ข้าวโพดฝักอ่อน">ข้าวโพดฝักอ่อน</button>
+          <button class="crop-tab" type="button" data-crop="ถั่วแระ">ถั่วแระ</button>
+          <button class="crop-tab" type="button" data-crop="ถั่วพุ่ม">ถั่วพุ่ม</button>
+          <button class="crop-tab" type="button" data-crop="ถั่วแขก">ถั่วแขก</button>
+        </nav>
+
         <section class="desk-calendar">
           <div class="binder" aria-hidden="true">
             <span></span>
@@ -62,6 +69,7 @@
                 <p class="eyebrow">Desk Calendar</p>
                 <h2 id="monthLabel"></h2>
               </div>
+              <div id="activeCropLabel" class="active-crop-label"></div>
               <div id="planCount" class="plan-count"></div>
             </div>
             <div class="weekday-grid" aria-hidden="true">

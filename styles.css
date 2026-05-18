@@ -203,6 +203,26 @@ select:focus {
   gap: 18px;
 }
 
+.crop-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.crop-tab {
+  min-height: 46px;
+  border-color: rgba(19, 111, 99, 0.2);
+  background: #fffdf8;
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
+.crop-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .topbar {
   justify-content: space-between;
   gap: 16px;
@@ -276,13 +296,25 @@ select:focus {
 .month-header {
   position: relative;
   z-index: 3;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
   gap: 16px;
   margin: 0 -18px 16px;
   min-height: 104px;
   padding: 34px 22px 20px;
   background: linear-gradient(90deg, #155e54, #1b7b6d 48%, #bd5b3a);
   color: #fff;
+}
+
+.active-crop-label {
+  justify-self: center;
+  max-width: min(420px, 42vw);
+  text-align: center;
+  font-size: clamp(26px, 4vw, 52px);
+  font-weight: 900;
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 .month-header .eyebrow {
@@ -295,6 +327,7 @@ select:focus {
 }
 
 .plan-count {
+  justify-self: end;
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 999px;
   color: #fff;
@@ -413,10 +446,10 @@ select:focus {
 
 .activity-chip {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
   align-items: start;
-  gap: 8px;
-  min-height: 40px;
+  gap: 10px;
+  min-height: 64px;
   border-left: 4px solid currentColor;
   border-radius: 7px;
   background: #fff;
@@ -436,12 +469,12 @@ select:focus {
 .activity-order {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: currentColor;
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
 }
 
@@ -470,6 +503,18 @@ select:focus {
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.activity-detail-only {
+  color: var(--ink);
+  display: -webkit-box;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.08;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .empty-hint {
@@ -537,6 +582,16 @@ select:focus {
   background: var(--paper-soft);
 }
 
+.detail-only-editor {
+  grid-template-columns: 1fr;
+}
+
+.detail-only-editor textarea {
+  min-height: 112px;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
 .activity-editor-heading {
   grid-column: 1 / -1;
   gap: 10px;
@@ -596,8 +651,18 @@ select:focus {
     width: 100%;
   }
 
+  #printMonthButton,
   #logoutButton {
     grid-column: 1 / -1;
+  }
+
+  .crop-tabs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .crop-tab {
+    min-height: 44px;
+    padding: 0 10px;
   }
 
   .desk-calendar {
@@ -621,14 +686,23 @@ select:focus {
 
   .month-header {
     align-items: flex-start;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
     margin: 0 -10px 14px;
     min-height: 120px;
     padding: 40px 16px 18px;
   }
 
+  .active-crop-label {
+    justify-self: start;
+    max-width: 100%;
+    text-align: left;
+    font-size: 34px;
+  }
+
   .plan-count {
+    justify-self: start;
     white-space: normal;
   }
 
@@ -668,7 +742,7 @@ select:focus {
   }
 
   .activity-chip {
-    min-height: 44px;
+    min-height: 68px;
   }
 
   .activity-title {
@@ -682,6 +756,12 @@ select:focus {
   .activity-detail {
     font-size: 12px;
     -webkit-line-clamp: 2;
+  }
+
+  .activity-detail-only {
+    font-size: 28px;
+    line-height: 1.08;
+    -webkit-line-clamp: 3;
   }
 
   .plan-dialog footer {
@@ -717,6 +797,7 @@ select:focus {
   .auth-view,
   .topbar,
   .calendar-message,
+  .crop-tabs,
   .binder,
   .desk-calendar::after,
   .plan-dialog {
@@ -745,6 +826,8 @@ select:focus {
   }
 
   .month-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     min-height: auto;
     margin: 0;
     padding: 12px 16px;
@@ -753,6 +836,11 @@ select:focus {
 
   .month-header h2 {
     font-size: 28px;
+  }
+
+  .active-crop-label {
+    max-width: 360px;
+    font-size: 30px;
   }
 
   .plan-count {
@@ -784,7 +872,7 @@ select:focus {
 
   .day-cell {
     display: block !important;
-    min-height: 102px !important;
+    min-height: 178px !important;
     border-radius: 0 !important;
     border: 0;
     border-top: 1px solid var(--line) !important;
@@ -821,14 +909,14 @@ select:focus {
   }
 
   .activity-preview {
-    margin-top: 24px;
-    gap: 3px;
+    margin-top: 30px;
+    gap: 6px;
   }
 
   .activity-chip {
-    min-height: 24px;
-    grid-template-columns: 16px minmax(0, 1fr);
-    gap: 5px;
+    min-height: 64px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
     border-left-width: 3px;
     border-radius: 4px;
     padding: 3px 5px 3px 3px;
@@ -836,9 +924,9 @@ select:focus {
   }
 
   .activity-order {
-    width: 16px;
-    height: 16px;
-    font-size: 9px;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
   }
 
   .activity-title {
@@ -849,6 +937,12 @@ select:focus {
     font-size: 9px;
     line-height: 1.18;
     -webkit-line-clamp: 2;
+  }
+
+  .activity-detail-only {
+    font-size: 28px;
+    line-height: 1.08;
+    -webkit-line-clamp: 3;
   }
 
   .empty-hint {

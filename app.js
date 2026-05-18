@@ -21,12 +21,14 @@ const logoutButton = document.querySelector("#logoutButton");
 const currentUserLabel = document.querySelector("#currentUserLabel");
 const calendarMessage = document.querySelector("#calendarMessage");
 const monthLabel = document.querySelector("#monthLabel");
+const activeCropLabel = document.querySelector("#activeCropLabel");
 const calendarGrid = document.querySelector("#calendarGrid");
 const planCount = document.querySelector("#planCount");
 const prevMonthButton = document.querySelector("#prevMonthButton");
 const nextMonthButton = document.querySelector("#nextMonthButton");
 const todayButton = document.querySelector("#todayButton");
 const printMonthButton = document.querySelector("#printMonthButton");
+const cropTabs = [...document.querySelectorAll(".crop-tab")];
 const planDialog = document.querySelector("#planDialog");
 const planForm = document.querySelector("#planForm");
 const dialogDateLabel = document.querySelector("#dialogDateLabel");
@@ -36,11 +38,7 @@ const cancelPlanButton = document.querySelector("#cancelPlanButton");
 const clearActivitiesButton = document.querySelector("#clearActivitiesButton");
 
 const MAX_ACTIVITIES = 3;
-const statusLabels = {
-  planned: "วางแผน",
-  progress: "กำลังทำ",
-  done: "เสร็จแล้ว",
-};
+const CROP_NAMES = ["ข้าวโพดฝักอ่อน", "ถั่วแระ", "ถั่วพุ่ม", "ถั่วแขก"];
 
 const dateFormatter = new Intl.DateTimeFormat("th-TH", {
   day: "numeric",
@@ -56,22 +54,11 @@ const weekdayFormatter = new Intl.DateTimeFormat("th-TH", {
 });
 
 let activeUser = null;
+let activeCrop = CROP_NAMES[0];
 let viewedDate = new Date();
 let selectedDateKey = "";
 let plansCache = {};
-
-function normalizeDayActivities(dayValue) {
-  if (!dayValue) return [];
-  if (Array.isArray(dayValue)) return dayValue.slice(0, MAX_ACTIVITIES);
-  if (Array.isArray(dayValue.activities)) return dayValue.activities.slice(0, MAX_ACTIVITIES);
-  return [
-    {
-      title: dayValue.title || "",
-      detail: dayValue.detail || "",
-      status: dayValue.status || "planned",
-    },
-  ].filter((activity) => activity.title || activity.detail);
-}
+let rawPlanRows = {};
 
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -102,6 +89,43 @@ function getMonthRange(date) {
   };
 }
 
+function normalizeActivityList(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, MAX_ACTIVITIES)
+    .map((activity) => ({
+      detail: activity.detail || activity.title || "",
+      updatedAt: activity.updatedAt || activity.updated_at || new Date().toISOString(),
+    }))
+    .filter((activity) => activity.detail);
+}
+
+function normalizePlanMap(value) {
+  if (!value) return {};
+
+  if (Array.isArray(value)) {
+    return {
+      [CROP_NAMES[0]]: normalizeActivityList(value),
+    };
+  }
+
+  if (Array.isArray(value.activities)) {
+    return {
+      [CROP_NAMES[0]]: normalizeActivityList(value.activities),
+    };
+  }
+
+  const map = {};
+  CROP_NAMES.forEach((cropName) => {
+    map[cropName] = normalizeActivityList(value[cropName]);
+  });
+  return map;
+}
+
+function getActiveActivities(dateKey) {
+  return plansCache[dateKey] || [];
+}
+
 function showAuth(message = "") {
   calendarView.classList.add("hidden");
   authView.classList.remove("hidden");
@@ -111,35 +135,37 @@ function showAuth(message = "") {
   emailInput.focus();
 }
 
+function updateCropUi() {
+  cropTabs.forEach((button) => {
+    const isActive = button.dataset.crop === activeCrop;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  activeCropLabel.textContent = activeCrop;
+}
+
 function showCalendar() {
   authView.classList.add("hidden");
   calendarView.classList.remove("hidden");
   currentUserLabel.textContent = activeUser ? `User: ${activeUser.email}` : "";
   calendarMessage.textContent = "";
+  updateCropUi();
   renderCalendar();
 }
 
 function createActivityCard(activity, activityIndex) {
   const item = document.createElement("div");
-  item.className = `activity-chip status-${activity.status || "planned"}`;
+  item.className = "activity-chip";
 
   const order = document.createElement("span");
   order.className = "activity-order";
   order.textContent = activityIndex + 1;
 
-  const textWrap = document.createElement("span");
-  textWrap.className = "activity-text";
-
-  const title = document.createElement("span");
-  title.className = "activity-title";
-  title.textContent = activity.title || "ไม่มีหัวข้อ";
-
   const detail = document.createElement("span");
-  detail.className = "activity-detail";
+  detail.className = "activity-detail-only";
   detail.textContent = activity.detail || "ไม่มีรายละเอียด";
 
-  textWrap.append(title, detail);
-  item.append(order, textWrap);
+  item.append(order, detail);
   return item;
 }
 
@@ -153,13 +179,14 @@ function renderCalendar() {
   let monthActivityCount = 0;
 
   monthLabel.textContent = monthFormatter.format(viewedDate);
+  activeCropLabel.textContent = activeCrop;
   calendarGrid.innerHTML = "";
 
   for (let index = 0; index < 42; index += 1) {
     const cellDate = new Date(gridStart);
     cellDate.setDate(gridStart.getDate() + index);
     const dateKey = formatDateKey(cellDate);
-    const activities = plansCache[dateKey] || [];
+    const activities = getActiveActivities(dateKey);
     const isCurrentMonth = cellDate.getMonth() === activeMonth && cellDate.getFullYear() === activeYear;
 
     if (isCurrentMonth) monthActivityCount += activities.length;
@@ -170,7 +197,7 @@ function renderCalendar() {
     if (!isCurrentMonth) button.classList.add("outside");
     if (sameDay(cellDate, today)) button.classList.add("today");
     button.dataset.date = dateKey;
-    button.setAttribute("aria-label", `แก้ไขกิจกรรมวันที่ ${dateFormatter.format(cellDate)}`);
+    button.setAttribute("aria-label", `แก้ไขรายละเอียดวันที่ ${dateFormatter.format(cellDate)} - ${activeCrop}`);
 
     const dateHeader = document.createElement("div");
     dateHeader.className = "date-line";
@@ -204,7 +231,7 @@ function renderCalendar() {
     } else {
       const hint = document.createElement("div");
       hint.className = "empty-hint";
-      hint.textContent = "+ เพิ่มกิจกรรม";
+      hint.textContent = "+ เพิ่มรายละเอียด";
       button.append(hint);
     }
 
@@ -212,7 +239,15 @@ function renderCalendar() {
   }
 
   planCount.textContent =
-    monthActivityCount === 0 ? "ยังไม่มีกิจกรรมในเดือนนี้" : `${monthActivityCount} กิจกรรมในเดือนนี้`;
+    monthActivityCount === 0 ? "ยังไม่มีรายละเอียดในเดือนนี้" : `${monthActivityCount} รายการในเดือนนี้`;
+}
+
+function rebuildActiveCropCache() {
+  plansCache = {};
+  Object.entries(rawPlanRows).forEach(([dateKey, planMap]) => {
+    const activities = normalizeActivityList(planMap[activeCrop]);
+    if (activities.length) plansCache[dateKey] = activities;
+  });
 }
 
 async function loadPlansForViewedMonth() {
@@ -229,13 +264,14 @@ async function loadPlansForViewedMonth() {
 
     if (error) throw error;
 
-    plansCache = {};
+    rawPlanRows = {};
     (data || []).forEach((row) => {
-      const activities = normalizeDayActivities(row.activities).filter((activity) => activity.title || activity.detail);
-      if (activities.length) plansCache[row.plan_date] = activities;
+      rawPlanRows[row.plan_date] = normalizePlanMap(row.activities);
     });
+    rebuildActiveCropCache();
     renderCalendar();
   } catch (error) {
+    rawPlanRows = {};
     plansCache = {};
     renderCalendar();
     calendarMessage.textContent =
@@ -246,19 +282,24 @@ async function loadPlansForViewedMonth() {
 }
 
 async function upsertActivities(dateKey, activities) {
-  if (activities.length) {
+  const planMap = normalizePlanMap(rawPlanRows[dateKey]);
+  planMap[activeCrop] = activities;
+
+  const hasAnyDetail = CROP_NAMES.some((cropName) => normalizeActivityList(planMap[cropName]).length > 0);
+
+  if (hasAnyDetail) {
     const { error } = await supabaseClient.from("monthly_plans").upsert(
       {
         user_id: activeUser.id,
         plan_date: dateKey,
-        activities,
+        activities: planMap,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,plan_date" },
     );
 
     if (error) throw error;
-    plansCache[dateKey] = activities;
+    rawPlanRows[dateKey] = planMap;
   } else {
     const { error } = await supabaseClient
       .from("monthly_plans")
@@ -266,8 +307,10 @@ async function upsertActivities(dateKey, activities) {
       .eq("user_id", activeUser.id)
       .eq("plan_date", dateKey);
     if (error) throw error;
-    delete plansCache[dateKey];
+    delete rawPlanRows[dateKey];
   }
+
+  rebuildActiveCropCache();
 }
 
 function renderActivityFields(activities) {
@@ -276,33 +319,19 @@ function renderActivityFields(activities) {
   for (let index = 0; index < MAX_ACTIVITIES; index += 1) {
     const activity = activities[index] || {};
     const item = document.createElement("section");
-    item.className = "activity-editor";
+    item.className = "activity-editor detail-only-editor";
     item.innerHTML = `
       <div class="activity-editor-heading">
         <span>${index + 1}</span>
-        <strong>กิจกรรมที่ ${index + 1}</strong>
+        <strong>รายละเอียดที่ ${index + 1}</strong>
       </div>
       <label>
-        หัวข้อ
-        <input class="activity-title-input" maxlength="80" placeholder="เช่น ประชุมทีม / ส่งรายงาน" />
-      </label>
-      <label>
         รายละเอียด
-        <textarea class="activity-detail-input" rows="3" placeholder="รายละเอียดสั้น ๆ ของกิจกรรมนี้"></textarea>
-      </label>
-      <label>
-        สถานะ
-        <select class="activity-status-input">
-          <option value="planned">${statusLabels.planned}</option>
-          <option value="progress">${statusLabels.progress}</option>
-          <option value="done">${statusLabels.done}</option>
-        </select>
+        <textarea class="activity-detail-input" rows="4" placeholder="กรอกรายละเอียดของ ${activeCrop} ในวันนี้"></textarea>
       </label>
     `;
 
-    item.querySelector(".activity-title-input").value = activity.title || "";
     item.querySelector(".activity-detail-input").value = activity.detail || "";
-    item.querySelector(".activity-status-input").value = activity.status || "planned";
     activityFormList.append(item);
   }
 }
@@ -310,12 +339,10 @@ function renderActivityFields(activities) {
 function readActivityFields() {
   return [...activityFormList.querySelectorAll(".activity-editor")]
     .map((item) => ({
-      title: item.querySelector(".activity-title-input").value.trim(),
       detail: item.querySelector(".activity-detail-input").value.trim(),
-      status: item.querySelector(".activity-status-input").value,
       updatedAt: new Date().toISOString(),
     }))
-    .filter((activity) => activity.title || activity.detail);
+    .filter((activity) => activity.detail);
 }
 
 function openPlanDialog(dateKey) {
@@ -323,11 +350,11 @@ function openPlanDialog(dateKey) {
   const [year, month, day] = dateKey.split("-").map(Number);
   const date = new Date(year, month - 1, day);
 
-  dialogDateLabel.textContent = dateFormatter.format(date);
-  renderActivityFields(plansCache[dateKey] || []);
-  clearActivitiesButton.disabled = !(plansCache[dateKey] || []).length;
+  dialogDateLabel.textContent = `${dateFormatter.format(date)} - ${activeCrop}`;
+  renderActivityFields(getActiveActivities(dateKey));
+  clearActivitiesButton.disabled = !getActiveActivities(dateKey).length;
   planDialog.showModal();
-  activityFormList.querySelector("input").focus();
+  activityFormList.querySelector("textarea").focus();
 }
 
 async function handleLogin(event) {
@@ -378,6 +405,7 @@ registerButton.addEventListener("click", handleRegister);
 logoutButton.addEventListener("click", async () => {
   await supabaseClient.auth.signOut();
   activeUser = null;
+  rawPlanRows = {};
   plansCache = {};
   showAuth("ออกจากระบบแล้ว");
 });
@@ -398,8 +426,17 @@ todayButton.addEventListener("click", async () => {
 });
 
 printMonthButton.addEventListener("click", () => {
-  document.title = `Monthly Plan - ${monthLabel.textContent}`;
+  document.title = `Monthly Plan - ${activeCrop} - ${monthLabel.textContent}`;
   window.print();
+});
+
+cropTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    activeCrop = button.dataset.crop;
+    updateCropUi();
+    rebuildActiveCropCache();
+    renderCalendar();
+  });
 });
 
 calendarGrid.addEventListener("click", (event) => {
@@ -427,7 +464,7 @@ clearActivitiesButton.addEventListener("click", async () => {
     planDialog.close();
     renderCalendar();
   } catch (error) {
-    alert("ล้างกิจกรรมไม่สำเร็จ: " + error.message);
+    alert("ล้างรายละเอียดไม่สำเร็จ: " + error.message);
   }
 });
 
@@ -435,6 +472,8 @@ closeDialogButton.addEventListener("click", () => planDialog.close());
 cancelPlanButton.addEventListener("click", () => planDialog.close());
 
 async function initializeApp() {
+  updateCropUi();
+
   if (!isSupabaseConfigured || !supabaseClient) {
     showAuth("กรุณาใส่ Supabase URL และ Anon Key ในไฟล์ config.js ก่อนใช้งาน");
     authForm.querySelectorAll("input, button").forEach((element) => {
