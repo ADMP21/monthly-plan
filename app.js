@@ -40,6 +40,17 @@ const clearActivitiesButton = document.querySelector("#clearActivitiesButton");
 const MAX_ACTIVITIES = 3;
 const CROP_NAMES = ["ข้าวโพดฝักอ่อน", "ถั่วแระ", "ถั่วพุ่ม", "ถั่วแขก"];
 
+const CROP_THEME_MAP = {
+  "ข้าวโพดฝักอ่อน": "corn",
+  "ถั่วแระ":         "edamame",
+  "ถั่วพุ่ม":        "bush",
+  "ถั่วแขก":         "longbean",
+};
+
+function setCropTheme(cropName) {
+  document.documentElement.dataset.crop = CROP_THEME_MAP[cropName] || "corn";
+}
+
 const dateFormatter = new Intl.DateTimeFormat("th-TH", {
   day: "numeric",
   month: "long",
@@ -142,6 +153,7 @@ function updateCropUi() {
     button.setAttribute("aria-pressed", String(isActive));
   });
   activeCropLabel.textContent = activeCrop;
+  setCropTheme(activeCrop);
 }
 
 function showCalendar() {
