@@ -10,13 +10,14 @@
   </head>
   <body>
     <main class="app-shell">
+
+      <!-- ── Auth ── -->
       <section id="authView" class="auth-view" aria-labelledby="authTitle">
         <div class="brand">
           <p class="eyebrow">Private Monthly Planner</p>
           <h1 id="authTitle">Monthly Plan</h1>
           <p>เข้าสู่ระบบเพื่อดูและแก้ไขแผนรายเดือนของคุณเท่านั้น</p>
         </div>
-
         <form id="authForm" class="auth-card">
           <label>
             Email
@@ -34,13 +35,21 @@
         </form>
       </section>
 
-      <section id="calendarView" class="calendar-view hidden" aria-label="Monthly plan calendar">
+      <!-- ── Main app (calendar + dashboard share this wrapper) ── -->
+      <section id="appView" class="hidden">
+
+        <!-- Topbar shared by both pages -->
         <header class="topbar">
           <div>
             <p id="currentUserLabel" class="eyebrow"></p>
             <h1>Monthly Plan</h1>
           </div>
           <div class="topbar-actions">
+            <!-- page switcher -->
+            <div class="page-switcher">
+              <button id="switchCalendarBtn" class="page-switch-btn active" type="button">📅 ปฏิทิน</button>
+              <button id="switchDashboardBtn" class="page-switch-btn" type="button">📊 สรุปผลผลิต</button>
+            </div>
             <button id="prevMonthButton" class="icon-button" aria-label="Previous month">‹</button>
             <button id="todayButton">เดือนนี้</button>
             <button id="nextMonthButton" class="icon-button" aria-label="Next month">›</button>
@@ -48,62 +57,104 @@
             <button id="logoutButton">ออกจากระบบ</button>
           </div>
         </header>
+
         <p id="calendarMessage" class="calendar-message" role="status"></p>
 
-        <nav class="crop-tabs" aria-label="เลือกกิจกรรมหลัก">
-          <button class="crop-tab active" type="button" data-crop="ข้าวโพดฝักอ่อน">ข้าวโพดฝักอ่อน</button>
-          <button class="crop-tab" type="button" data-crop="ถั่วแระ">ถั่วแระ</button>
-          <button class="crop-tab" type="button" data-crop="ถั่วพุ่ม">ถั่วพุ่ม</button>
-          <button class="crop-tab" type="button" data-crop="ถั่วแขก">ถั่วแขก</button>
-        </nav>
+        <!-- ── Page: Calendar ── -->
+        <div id="calendarPage">
+          <nav class="crop-tabs" aria-label="เลือกกิจกรรมหลัก">
+            <button class="crop-tab active" type="button" data-crop="ข้าวโพดฝักอ่อน">ข้าวโพดฝักอ่อน</button>
+            <button class="crop-tab" type="button" data-crop="ถั่วแระ">ถั่วแระ</button>
+            <button class="crop-tab" type="button" data-crop="ถั่วพุ่ม">ถั่วพุ่ม</button>
+            <button class="crop-tab" type="button" data-crop="ถั่วแขก">ถั่วแขก</button>
+          </nav>
 
-        <section class="desk-calendar">
-          <div class="binder" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="calendar-panel">
-            <div class="month-header">
-              <div class="month-header-left">
-                <img src="cm_logo.png" alt="CM Logo" class="calendar-logo" />
-                <div>
-                  <p class="eyebrow">Desk Calendar</p>
-                  <h2 id="monthLabel"></h2>
+          <section class="desk-calendar">
+            <div class="binder" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="calendar-panel">
+              <div class="month-header">
+                <div class="month-header-left">
+                  <img src="cm_logo.png" alt="CM Logo" class="calendar-logo" />
+                  <div>
+                    <p class="eyebrow">Desk Calendar</p>
+                    <h2 id="monthLabel"></h2>
+                  </div>
+                </div>
+                <div id="activeCropLabel" class="active-crop-label"></div>
+                <div id="planCount" class="plan-count"></div>
+              </div>
+              <div class="weekday-grid" aria-hidden="true">
+                <span>อา.</span><span>จ.</span><span>อ.</span><span>พ.</span>
+                <span>พฤ.</span><span>ศ.</span><span>ส.</span>
+              </div>
+              <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ── Page: Dashboard ── -->
+        <div id="dashboardPage" class="hidden">
+          <section class="dashboard">
+            <div class="dashboard-header">
+              <h2 class="dashboard-title">สรุปผลผลิต</h2>
+              <p class="dashboard-subtitle" id="dashboardMonthLabel"></p>
+            </div>
+            <div class="dash-cards" id="dashSummaryCards"></div>
+            <div class="dash-body">
+              <div class="dash-chart-wrap">
+                <h3 class="dash-section-title">กราฟรวมแต่ละชนิด (กิโลกรัม)</h3>
+                <div class="chart-container">
+                  <canvas id="dashChart"></canvas>
                 </div>
               </div>
-              <div id="activeCropLabel" class="active-crop-label"></div>
-              <div id="planCount" class="plan-count"></div>
+              <div class="dash-table-wrap">
+                <h3 class="dash-section-title">ตารางรายวัน</h3>
+                <div class="table-scroll">
+                  <table class="dash-table">
+                    <thead>
+                      <tr>
+                        <th>วันที่</th>
+                        <th>ข้าวโพดฝักอ่อน</th>
+                        <th>ถั่วแระ</th>
+                        <th>ถั่วพุ่ม</th>
+                        <th>ถั่วแขก</th>
+                        <th>รวม</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashTableBody"></tbody>
+                    <tfoot id="dashTableFoot"></tfoot>
+                  </table>
+                </div>
+              </div>
             </div>
-            <div class="weekday-grid" aria-hidden="true">
-              <span>อา.</span>
-              <span>จ.</span>
-              <span>อ.</span>
-              <span>พ.</span>
-              <span>พฤ.</span>
-              <span>ศ.</span>
-              <span>ส.</span>
-            </div>
-            <div id="calendarGrid" class="calendar-grid"></div>
-          </div>
-        </section>
-      </section>
+          </section>
+        </div>
+
+      </section><!-- /appView -->
     </main>
 
+    <!-- ── Dialog ── -->
     <dialog id="planDialog" class="plan-dialog">
       <form id="planForm" method="dialog">
         <header>
           <div>
-            <p class="eyebrow">เพิ่มได้สูงสุด 3 กิจกรรม</p>
+            <p class="eyebrow">บันทึกน้ำหนักผลผลิต</p>
             <h2 id="dialogDateLabel"></h2>
           </div>
           <button type="button" id="closeDialogButton" class="icon-button" aria-label="Close">×</button>
         </header>
-
-        <div class="activity-list" id="activityFormList"></div>
-
+        <div class="kg-input-wrap">
+          <label class="kg-label" for="kgInput">
+            <span class="kg-crop-name" id="dialogCropName"></span>
+            <span class="kg-unit-hint">น้ำหนักที่เก็บเกี่ยวได้</span>
+          </label>
+          <div class="kg-field">
+            <input id="kgInput" type="number" min="0" step="0.01" placeholder="0.00" class="kg-number-input" />
+            <span class="kg-unit">กิโลกรัม</span>
+          </div>
+        </div>
         <footer>
           <button type="button" id="clearActivitiesButton" class="danger">ล้างวันนี้</button>
           <div>
@@ -115,6 +166,7 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
   </body>

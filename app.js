@@ -10,34 +10,45 @@ const supabaseClient =
     ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey)
     : null;
 
-const authView = document.querySelector("#authView");
-const calendarView = document.querySelector("#calendarView");
-const authForm = document.querySelector("#authForm");
-const authMessage = document.querySelector("#authMessage");
-const emailInput = document.querySelector("#emailInput");
-const passwordInput = document.querySelector("#passwordInput");
-const registerButton = document.querySelector("#registerButton");
-const logoutButton = document.querySelector("#logoutButton");
-const currentUserLabel = document.querySelector("#currentUserLabel");
-const calendarMessage = document.querySelector("#calendarMessage");
-const monthLabel = document.querySelector("#monthLabel");
-const activeCropLabel = document.querySelector("#activeCropLabel");
-const calendarGrid = document.querySelector("#calendarGrid");
-const planCount = document.querySelector("#planCount");
-const prevMonthButton = document.querySelector("#prevMonthButton");
-const nextMonthButton = document.querySelector("#nextMonthButton");
-const todayButton = document.querySelector("#todayButton");
-const printMonthButton = document.querySelector("#printMonthButton");
-const cropTabs = [...document.querySelectorAll(".crop-tab")];
-const planDialog = document.querySelector("#planDialog");
-const planForm = document.querySelector("#planForm");
-const dialogDateLabel = document.querySelector("#dialogDateLabel");
-const activityFormList = document.querySelector("#activityFormList");
-const closeDialogButton = document.querySelector("#closeDialogButton");
-const cancelPlanButton = document.querySelector("#cancelPlanButton");
+// ── DOM refs ──────────────────────────────────────────────────
+const authView              = document.querySelector("#authView");
+const appView               = document.querySelector("#appView");
+const calendarPage          = document.querySelector("#calendarPage");
+const dashboardPage         = document.querySelector("#dashboardPage");
+const switchCalendarBtn     = document.querySelector("#switchCalendarBtn");
+const switchDashboardBtn    = document.querySelector("#switchDashboardBtn");
+const authForm              = document.querySelector("#authForm");
+const authMessage           = document.querySelector("#authMessage");
+const emailInput            = document.querySelector("#emailInput");
+const passwordInput         = document.querySelector("#passwordInput");
+const registerButton        = document.querySelector("#registerButton");
+const logoutButton          = document.querySelector("#logoutButton");
+const currentUserLabel      = document.querySelector("#currentUserLabel");
+const calendarMessage       = document.querySelector("#calendarMessage");
+const monthLabel            = document.querySelector("#monthLabel");
+const activeCropLabel       = document.querySelector("#activeCropLabel");
+const calendarGrid          = document.querySelector("#calendarGrid");
+const planCount             = document.querySelector("#planCount");
+const prevMonthButton       = document.querySelector("#prevMonthButton");
+const nextMonthButton       = document.querySelector("#nextMonthButton");
+const todayButton           = document.querySelector("#todayButton");
+const printMonthButton      = document.querySelector("#printMonthButton");
+const cropTabs              = [...document.querySelectorAll(".crop-tab")];
+const planDialog            = document.querySelector("#planDialog");
+const planForm              = document.querySelector("#planForm");
+const dialogDateLabel       = document.querySelector("#dialogDateLabel");
+const dialogCropName        = document.querySelector("#dialogCropName");
+const kgInput               = document.querySelector("#kgInput");
+const closeDialogButton     = document.querySelector("#closeDialogButton");
+const cancelPlanButton      = document.querySelector("#cancelPlanButton");
 const clearActivitiesButton = document.querySelector("#clearActivitiesButton");
+// dashboard
+const dashSummaryCards      = document.querySelector("#dashSummaryCards");
+const dashTableBody         = document.querySelector("#dashTableBody");
+const dashTableFoot         = document.querySelector("#dashTableFoot");
+const dashboardMonthLabel   = document.querySelector("#dashboardMonthLabel");
 
-const MAX_ACTIVITIES = 3;
+// ── Constants ──────────────────────────────────────────────────
 const CROP_NAMES = ["ข้าวโพดฝักอ่อน", "ถั่วแระ", "ถั่วพุ่ม", "ถั่วแขก"];
 
 const CROP_THEME_MAP = {
@@ -47,98 +58,82 @@ const CROP_THEME_MAP = {
   "ถั่วแขก":         "longbean",
 };
 
+const CROP_COLORS = {
+  "ข้าวโพดฝักอ่อน": { bar: "#c8901a", pale: "#fef3dc" },
+  "ถั่วแระ":         { bar: "#2a9a40", pale: "#edfaf0" },
+  "ถั่วพุ่ม":        { bar: "#6ab000", pale: "#f4fae0" },
+  "ถั่วแขก":         { bar: "#0080b8", pale: "#e8f4fc" },
+};
+
 function setCropTheme(cropName) {
   document.documentElement.dataset.crop = CROP_THEME_MAP[cropName] || "corn";
 }
 
+// ── Formatters ────────────────────────────────────────────────
 const dateFormatter = new Intl.DateTimeFormat("th-TH", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
+  day: "numeric", month: "long", year: "numeric",
 });
 const monthFormatter = new Intl.DateTimeFormat("th-TH", {
-  month: "long",
-  year: "numeric",
+  month: "long", year: "numeric",
 });
-const weekdayFormatter = new Intl.DateTimeFormat("th-TH", {
-  weekday: "short",
+const weekdayFormatter = new Intl.DateTimeFormat("th-TH", { weekday: "short" });
+const shortDateFormatter = new Intl.DateTimeFormat("th-TH", {
+  day: "numeric", month: "short",
 });
 
-let activeUser = null;
-let activeCrop = CROP_NAMES[0];
-let viewedDate = new Date();
-let selectedDateKey = "";
-let plansCache = {};
-let rawPlanRows = {};
+// ── State ────────────────────────────────────────────────────
+let activeUser       = null;
+let activeCrop       = CROP_NAMES[0];
+let viewedDate       = new Date();
+let selectedDateKey  = "";
+let plansCache       = {};   // dateKey → kg (number) for activeCrop
+let rawPlanRows      = {};   // dateKey → { cropName: kg }
+let dashChartInstance = null;
 
+// ── Helpers ───────────────────────────────────────────────────
 function formatDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function monthStart(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function sameDay(left, right) {
-  return formatDateKey(left) === formatDateKey(right);
+function sameDay(a, b) {
+  return formatDateKey(a) === formatDateKey(b);
 }
 
 function getMonthRange(date) {
-  const firstDay = monthStart(date);
+  const firstDay  = monthStart(date);
   const gridStart = new Date(firstDay);
   gridStart.setDate(firstDay.getDate() - firstDay.getDay());
-
   const gridEnd = new Date(gridStart);
   gridEnd.setDate(gridStart.getDate() + 41);
-
-  return {
-    start: formatDateKey(gridStart),
-    end: formatDateKey(gridEnd),
-  };
+  return { start: formatDateKey(gridStart), end: formatDateKey(gridEnd) };
 }
 
-function normalizeActivityList(value) {
-  if (!Array.isArray(value)) return [];
-  return value
-    .slice(0, MAX_ACTIVITIES)
-    .map((activity) => ({
-      detail: activity.detail || activity.title || "",
-      updatedAt: activity.updatedAt || activity.updated_at || new Date().toISOString(),
-    }))
-    .filter((activity) => activity.detail);
-}
-
+// ── Data normalization ────────────────────────────────────────
+// stored format: { "ข้าวโพดฝักอ่อน": 12.5, "ถั่วแระ": 0, ... }
 function normalizePlanMap(value) {
   if (!value) return {};
-
-  if (Array.isArray(value)) {
-    return {
-      [CROP_NAMES[0]]: normalizeActivityList(value),
-    };
-  }
-
-  if (Array.isArray(value.activities)) {
-    return {
-      [CROP_NAMES[0]]: normalizeActivityList(value.activities),
-    };
-  }
-
   const map = {};
-  CROP_NAMES.forEach((cropName) => {
-    map[cropName] = normalizeActivityList(value[cropName]);
+  CROP_NAMES.forEach((c) => {
+    const v = value[c];
+    map[c] = typeof v === "number" ? v : (parseFloat(v) || 0);
   });
   return map;
 }
 
-function getActiveActivities(dateKey) {
-  return plansCache[dateKey] || [];
+function getActiveKg(dateKey) {
+  return plansCache[dateKey] ?? null;
 }
 
+// ── UI: Auth ─────────────────────────────────────────────────
 function showAuth(message = "") {
-  calendarView.classList.add("hidden");
+  appView.classList.add("hidden");
   authView.classList.remove("hidden");
   authMessage.textContent = message;
   calendarMessage.textContent = "";
@@ -146,122 +141,110 @@ function showAuth(message = "") {
   emailInput.focus();
 }
 
+// ── UI: Page switching ────────────────────────────────────────
+let activePage = "calendar"; // "calendar" | "dashboard"
+
+function showPage(page) {
+  activePage = page;
+  const isCalendar = page === "calendar";
+  calendarPage.classList.toggle("hidden", !isCalendar);
+  dashboardPage.classList.toggle("hidden", isCalendar);
+  switchCalendarBtn.classList.toggle("active", isCalendar);
+  switchDashboardBtn.classList.toggle("active", !isCalendar);
+  if (!isCalendar) renderDashboard();
+}
+
+switchCalendarBtn.addEventListener("click",  () => showPage("calendar"));
+switchDashboardBtn.addEventListener("click", () => showPage("dashboard"));
+
+// ── UI: Crop tabs ─────────────────────────────────────────────
 function updateCropUi() {
-  cropTabs.forEach((button) => {
-    const isActive = button.dataset.crop === activeCrop;
-    button.classList.toggle("active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
+  cropTabs.forEach((btn) => {
+    const isActive = btn.dataset.crop === activeCrop;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
   });
   activeCropLabel.textContent = activeCrop;
   setCropTheme(activeCrop);
 }
 
-function showCalendar() {
-  authView.classList.add("hidden");
-  calendarView.classList.remove("hidden");
-  currentUserLabel.textContent = activeUser ? `User: ${activeUser.email}` : "";
-  calendarMessage.textContent = "";
-  updateCropUi();
-  renderCalendar();
-}
-
-function createActivityCard(activity, activityIndex) {
-  const item = document.createElement("div");
-  item.className = "activity-chip";
-
-  const order = document.createElement("span");
-  order.className = "activity-order";
-  order.textContent = activityIndex + 1;
-
-  const detail = document.createElement("span");
-  detail.className = "activity-detail-only";
-  detail.textContent = activity.detail || "ไม่มีรายละเอียด";
-
-  item.append(order, detail);
-  return item;
-}
-
+// ── UI: Calendar ──────────────────────────────────────────────
 function renderCalendar() {
-  const firstDay = monthStart(viewedDate);
-  const gridStart = new Date(firstDay);
+  const firstDay    = monthStart(viewedDate);
+  const gridStart   = new Date(firstDay);
   gridStart.setDate(firstDay.getDate() - firstDay.getDay());
-  const today = new Date();
+  const today       = new Date();
   const activeMonth = viewedDate.getMonth();
-  const activeYear = viewedDate.getFullYear();
-  let monthActivityCount = 0;
+  const activeYear  = viewedDate.getFullYear();
+  let totalKg       = 0;
+  let dayCount      = 0;
 
   monthLabel.textContent = monthFormatter.format(viewedDate);
   activeCropLabel.textContent = activeCrop;
   calendarGrid.innerHTML = "";
 
-  for (let index = 0; index < 42; index += 1) {
+  for (let i = 0; i < 42; i++) {
     const cellDate = new Date(gridStart);
-    cellDate.setDate(gridStart.getDate() + index);
-    const dateKey = formatDateKey(cellDate);
-    const activities = getActiveActivities(dateKey);
-    const isCurrentMonth = cellDate.getMonth() === activeMonth && cellDate.getFullYear() === activeYear;
+    cellDate.setDate(gridStart.getDate() + i);
+    const dateKey  = formatDateKey(cellDate);
+    const kg       = getActiveKg(dateKey);
+    const isCurMon = cellDate.getMonth() === activeMonth && cellDate.getFullYear() === activeYear;
 
-    if (isCurrentMonth) monthActivityCount += activities.length;
+    if (isCurMon && kg !== null && kg > 0) { totalKg += kg; dayCount++; }
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "day-cell";
-    if (!isCurrentMonth) button.classList.add("outside");
-    if (sameDay(cellDate, today)) button.classList.add("today");
-    button.dataset.date = dateKey;
-    button.setAttribute("aria-label", `แก้ไขรายละเอียดวันที่ ${dateFormatter.format(cellDate)} - ${activeCrop}`);
+    const btn = document.createElement("div");
+    btn.className = "day-cell";
+    if (!isCurMon) btn.classList.add("outside");
+    if (sameDay(cellDate, today)) btn.classList.add("today");
+    btn.dataset.date = dateKey;
+    btn.setAttribute("role", "button");
+    btn.setAttribute("tabindex", "0");
+    btn.setAttribute("aria-label", `บันทึกผลผลิตวันที่ ${dateFormatter.format(cellDate)} - ${activeCrop}`);
 
-    const dateHeader = document.createElement("div");
-    dateHeader.className = "date-line";
+    // date line
+    const dateLine = document.createElement("div");
+    dateLine.className = "date-line";
+    const num = document.createElement("span");
+    num.className   = "day-number";
+    num.textContent = cellDate.getDate();
+    dateLine.append(num);
+    const wd = document.createElement("span");
+    wd.className   = "day-weekday";
+    wd.textContent = weekdayFormatter.format(cellDate);
+    dateLine.append(wd);
+    btn.append(dateLine);
 
-    const number = document.createElement("span");
-    number.className = "day-number";
-    number.textContent = cellDate.getDate();
-    dateHeader.append(number);
-
-    const weekday = document.createElement("span");
-    weekday.className = "day-weekday";
-    weekday.textContent = weekdayFormatter.format(cellDate);
-    dateHeader.append(weekday);
-
-    if (activities.length) {
-      const badge = document.createElement("span");
-      badge.className = "activity-count";
-      badge.textContent = `${activities.length}/3`;
-      dateHeader.append(badge);
-    }
-
-    button.append(dateHeader);
-
-    if (activities.length) {
-      const preview = document.createElement("div");
-      preview.className = "activity-preview";
-      activities.forEach((activity, activityIndex) => {
-        preview.append(createActivityCard(activity, activityIndex));
-      });
-      button.append(preview);
+    // kg display
+    if (kg !== null && kg > 0) {
+      const kgBlock = document.createElement("div");
+      kgBlock.className = "kg-display";
+      kgBlock.innerHTML = `<span class="kg-value">${kg.toLocaleString("th-TH", { maximumFractionDigits: 2 })}</span><span class="kg-label-sm">กิโลกรัม</span>`;
+      btn.append(kgBlock);
     } else {
       const hint = document.createElement("div");
-      hint.className = "empty-hint";
-      hint.textContent = "+ เพิ่มรายละเอียด";
-      button.append(hint);
+      hint.className   = "empty-hint";
+      hint.textContent = "+ บันทึกน้ำหนัก";
+      btn.append(hint);
     }
 
-    calendarGrid.append(button);
+    calendarGrid.append(btn);
   }
 
-  planCount.textContent =
-    monthActivityCount === 0 ? "ยังไม่มีรายละเอียดในเดือนนี้" : `${monthActivityCount} รายการในเดือนนี้`;
+  planCount.textContent = totalKg === 0
+    ? "ยังไม่มีข้อมูลในเดือนนี้"
+    : `รวม ${totalKg.toLocaleString("th-TH", { maximumFractionDigits: 2 })} กก. (${dayCount} วัน)`;
 }
 
+// ── Cache rebuild ─────────────────────────────────────────────
 function rebuildActiveCropCache() {
   plansCache = {};
   Object.entries(rawPlanRows).forEach(([dateKey, planMap]) => {
-    const activities = normalizeActivityList(planMap[activeCrop]);
-    if (activities.length) plansCache[dateKey] = activities;
+    const kg = planMap[activeCrop] ?? 0;
+    if (kg > 0) plansCache[dateKey] = kg;
   });
 }
 
+// ── Data loading ──────────────────────────────────────────────
 async function loadPlansForViewedMonth() {
   if (!activeUser) return;
   const { start, end } = getMonthRange(viewedDate);
@@ -282,42 +265,34 @@ async function loadPlansForViewedMonth() {
     });
     rebuildActiveCropCache();
     renderCalendar();
-  } catch (error) {
+    renderDashboard();
+  } catch (err) {
     rawPlanRows = {};
-    plansCache = {};
+    plansCache  = {};
     renderCalendar();
+    renderDashboard();
     calendarMessage.textContent =
-      "โหลดข้อมูลจาก Supabase ไม่สำเร็จ: " +
-      error.message +
-      " | ถ้ายังไม่ได้รัน SQL ให้เปิดไฟล์ supabase-schema.sql แล้วรันใน Supabase SQL Editor ก่อน";
+      "โหลดข้อมูลไม่สำเร็จ: " + err.message;
   }
 }
 
-async function upsertActivities(dateKey, activities) {
+// ── Upsert (save kg) ──────────────────────────────────────────
+async function upsertKg(dateKey, kg) {
   const planMap = normalizePlanMap(rawPlanRows[dateKey]);
-  planMap[activeCrop] = activities;
+  planMap[activeCrop] = kg;
 
-  const hasAnyDetail = CROP_NAMES.some((cropName) => normalizeActivityList(planMap[cropName]).length > 0);
+  const hasAny = CROP_NAMES.some((c) => (planMap[c] || 0) > 0);
 
-  if (hasAnyDetail) {
+  if (hasAny) {
     const { error } = await supabaseClient.from("monthly_plans").upsert(
-      {
-        user_id: activeUser.id,
-        plan_date: dateKey,
-        activities: planMap,
-        updated_at: new Date().toISOString(),
-      },
+      { user_id: activeUser.id, plan_date: dateKey, activities: planMap, updated_at: new Date().toISOString() },
       { onConflict: "user_id,plan_date" },
     );
-
     if (error) throw error;
     rawPlanRows[dateKey] = planMap;
   } else {
-    const { error } = await supabaseClient
-      .from("monthly_plans")
-      .delete()
-      .eq("user_id", activeUser.id)
-      .eq("plan_date", dateKey);
+    const { error } = await supabaseClient.from("monthly_plans").delete()
+      .eq("user_id", activeUser.id).eq("plan_date", dateKey);
     if (error) throw error;
     delete rawPlanRows[dateKey];
   }
@@ -325,64 +300,171 @@ async function upsertActivities(dateKey, activities) {
   rebuildActiveCropCache();
 }
 
-function renderActivityFields(activities) {
-  activityFormList.innerHTML = "";
-
-  for (let index = 0; index < MAX_ACTIVITIES; index += 1) {
-    const activity = activities[index] || {};
-    const item = document.createElement("section");
-    item.className = "activity-editor detail-only-editor";
-    item.innerHTML = `
-      <div class="activity-editor-heading">
-        <span>${index + 1}</span>
-        <strong>รายละเอียดที่ ${index + 1}</strong>
-      </div>
-      <label>
-        รายละเอียด
-        <textarea class="activity-detail-input" rows="4" placeholder="กรอกรายละเอียดของ ${activeCrop} ในวันนี้"></textarea>
-      </label>
-    `;
-
-    item.querySelector(".activity-detail-input").value = activity.detail || "";
-    activityFormList.append(item);
-  }
-}
-
-function readActivityFields() {
-  return [...activityFormList.querySelectorAll(".activity-editor")]
-    .map((item) => ({
-      detail: item.querySelector(".activity-detail-input").value.trim(),
-      updatedAt: new Date().toISOString(),
-    }))
-    .filter((activity) => activity.detail);
-}
-
+// ── Dialog ────────────────────────────────────────────────────
 function openPlanDialog(dateKey) {
-  selectedDateKey = dateKey;
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-
-  dialogDateLabel.textContent = `${dateFormatter.format(date)} - ${activeCrop}`;
-  renderActivityFields(getActiveActivities(dateKey));
-  clearActivitiesButton.disabled = !getActiveActivities(dateKey).length;
+  selectedDateKey     = dateKey;
+  const [y, m, d]     = dateKey.split("-").map(Number);
+  const date          = new Date(y, m - 1, d);
+  dialogDateLabel.textContent = dateFormatter.format(date);
+  dialogCropName.textContent  = activeCrop;
+  const cur = rawPlanRows[dateKey]?.[activeCrop] || 0;
+  kgInput.value = cur > 0 ? cur : "";
+  clearActivitiesButton.disabled = !cur;
   planDialog.showModal();
-  activityFormList.querySelector("textarea").focus();
+  kgInput.focus();
 }
 
+// ── Dashboard ─────────────────────────────────────────────────
+function getMonthDays() {
+  const y = viewedDate.getFullYear();
+  const m = viewedDate.getMonth();
+  const days = [];
+  const d = new Date(y, m, 1);
+  while (d.getMonth() === m) {
+    days.push(formatDateKey(new Date(d)));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
+function renderDashboard() {
+  const days = getMonthDays();
+  dashboardMonthLabel.textContent = monthFormatter.format(viewedDate);
+
+  // totals per crop
+  const totals = {};
+  CROP_NAMES.forEach((c) => { totals[c] = 0; });
+  days.forEach((dk) => {
+    const row = rawPlanRows[dk];
+    if (!row) return;
+    CROP_NAMES.forEach((c) => { totals[c] += row[c] || 0; });
+  });
+  const grandTotal = CROP_NAMES.reduce((s, c) => s + totals[c], 0);
+
+  // ── Summary cards ──
+  dashSummaryCards.innerHTML = "";
+  const allCard = document.createElement("div");
+  allCard.className = "dash-card dash-card-total";
+  allCard.innerHTML = `
+    <div class="dash-card-icon">🌾</div>
+    <div class="dash-card-body">
+      <div class="dash-card-label">รวมทั้งหมด</div>
+      <div class="dash-card-value">${grandTotal.toLocaleString("th-TH", { maximumFractionDigits: 2 })}</div>
+      <div class="dash-card-unit">กิโลกรัม</div>
+    </div>`;
+  dashSummaryCards.append(allCard);
+
+  CROP_NAMES.forEach((c) => {
+    const col = CROP_COLORS[c];
+    const pct = grandTotal > 0 ? ((totals[c] / grandTotal) * 100).toFixed(1) : 0;
+    const card = document.createElement("div");
+    card.className = "dash-card";
+    card.style.setProperty("--card-color", col.bar);
+    card.style.setProperty("--card-pale",  col.pale);
+    card.innerHTML = `
+      <div class="dash-card-body">
+        <div class="dash-card-label">${c}</div>
+        <div class="dash-card-value" style="color:${col.bar}">${totals[c].toLocaleString("th-TH", { maximumFractionDigits: 2 })}</div>
+        <div class="dash-card-unit">กก. <span class="dash-card-pct">(${pct}%)</span></div>
+        <div class="dash-card-bar"><div class="dash-card-bar-fill" style="width:${pct}%;background:${col.bar}"></div></div>
+      </div>`;
+    dashSummaryCards.append(card);
+  });
+
+  // ── Chart ──
+  const ctx = document.getElementById("dashChart").getContext("2d");
+  if (dashChartInstance) dashChartInstance.destroy();
+
+  dashChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: CROP_NAMES,
+      datasets: [{
+        label: "กิโลกรัม",
+        data: CROP_NAMES.map((c) => totals[c]),
+        backgroundColor: CROP_NAMES.map((c) => CROP_COLORS[c].bar + "cc"),
+        borderColor:     CROP_NAMES.map((c) => CROP_COLORS[c].bar),
+        borderWidth: 2,
+        borderRadius: 8,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.parsed.y.toLocaleString("th-TH", { maximumFractionDigits: 2 })} กก.`,
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(0,0,0,0.06)" },
+          ticks: { callback: (v) => v.toLocaleString("th-TH") + " กก." },
+        },
+        x: { grid: { display: false } },
+      },
+    },
+  });
+
+  // ── Table ──
+  dashTableBody.innerHTML = "";
+  dashTableFoot.innerHTML = "";
+
+  // rows with any data
+  const activeDays = days.filter((dk) => {
+    const row = rawPlanRows[dk];
+    return row && CROP_NAMES.some((c) => (row[c] || 0) > 0);
+  });
+
+  if (activeDays.length === 0) {
+    dashTableBody.innerHTML = `<tr><td colspan="6" class="dash-empty">ยังไม่มีข้อมูลในเดือนนี้</td></tr>`;
+  } else {
+    activeDays.forEach((dk) => {
+      const row  = rawPlanRows[dk] || {};
+      const rowTotal = CROP_NAMES.reduce((s, c) => s + (row[c] || 0), 0);
+      const [y, m, d] = dk.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${shortDateFormatter.format(dateObj)}</td>
+        ${CROP_NAMES.map((c) => `<td class="num-cell">${row[c] > 0 ? row[c].toLocaleString("th-TH", { maximumFractionDigits: 2 }) : "-"}</td>`).join("")}
+        <td class="num-cell total-cell">${rowTotal.toLocaleString("th-TH", { maximumFractionDigits: 2 })}</td>`;
+      dashTableBody.append(tr);
+    });
+  }
+
+  // footer totals
+  const tfRow = document.createElement("tr");
+  tfRow.innerHTML = `
+    <td><strong>รวมเดือน</strong></td>
+    ${CROP_NAMES.map((c) => `<td class="num-cell"><strong>${totals[c].toLocaleString("th-TH", { maximumFractionDigits: 2 })}</strong></td>`).join("")}
+    <td class="num-cell total-cell"><strong>${grandTotal.toLocaleString("th-TH", { maximumFractionDigits: 2 })}</strong></td>`;
+  dashTableFoot.append(tfRow);
+}
+
+// ── Show calendar ──────────────────────────────────────────────
+function showCalendar() {
+  authView.classList.add("hidden");
+  appView.classList.remove("hidden");
+  currentUserLabel.textContent = activeUser ? `User: ${activeUser.email}` : "";
+  calendarMessage.textContent  = "";
+  showPage("calendar");
+  updateCropUi();
+  renderCalendar();
+}
+
+// ── Auth ──────────────────────────────────────────────────────
 async function handleLogin(event) {
   event.preventDefault();
   authMessage.textContent = "";
-
   const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: emailInput.value.trim(),
-    password: passwordInput.value,
+    email: emailInput.value.trim(), password: passwordInput.value,
   });
-
-  if (error) {
-    authMessage.textContent = "เข้าสู่ระบบไม่สำเร็จ: " + error.message;
-    return;
-  }
-
+  if (error) { authMessage.textContent = "เข้าสู่ระบบไม่สำเร็จ: " + error.message; return; }
   activeUser = data.user;
   showCalendar();
   await loadPlansForViewedMonth();
@@ -390,35 +472,26 @@ async function handleLogin(event) {
 
 async function handleRegister() {
   authMessage.textContent = "";
-
   const { data, error } = await supabaseClient.auth.signUp({
-    email: emailInput.value.trim(),
-    password: passwordInput.value,
+    email: emailInput.value.trim(), password: passwordInput.value,
   });
-
-  if (error) {
-    authMessage.textContent = "สมัครไม่สำเร็จ: " + error.message;
-    return;
-  }
-
+  if (error) { authMessage.textContent = "สมัครไม่สำเร็จ: " + error.message; return; }
   if (data.user && !data.session) {
     authMessage.textContent = "สมัครแล้ว กรุณาเช็ก email เพื่อยืนยันบัญชีก่อนเข้าสู่ระบบ";
     return;
   }
-
   activeUser = data.user;
   showCalendar();
   await loadPlansForViewedMonth();
 }
 
+// ── Event listeners ───────────────────────────────────────────
 authForm.addEventListener("submit", handleLogin);
 registerButton.addEventListener("click", handleRegister);
 
 logoutButton.addEventListener("click", async () => {
   await supabaseClient.auth.signOut();
-  activeUser = null;
-  rawPlanRows = {};
-  plansCache = {};
+  activeUser = null; rawPlanRows = {}; plansCache = {};
   showAuth("ออกจากระบบแล้ว");
 });
 
@@ -442,63 +515,69 @@ printMonthButton.addEventListener("click", () => {
   window.print();
 });
 
-cropTabs.forEach((button) => {
-  button.addEventListener("click", () => {
-    activeCrop = button.dataset.crop;
+cropTabs.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    activeCrop = btn.dataset.crop;
     updateCropUi();
     rebuildActiveCropCache();
     renderCalendar();
+    // dashboard already shows all crops — no re-render needed
   });
 });
 
-calendarGrid.addEventListener("click", (event) => {
-  const dayCell = event.target.closest(".day-cell");
-  if (!dayCell) return;
-  openPlanDialog(dayCell.dataset.date);
+calendarGrid.addEventListener("click", (e) => {
+  const cell = e.target.closest(".day-cell");
+  if (!cell) return;
+  openPlanDialog(cell.dataset.date);
 });
 
-planForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const activities = readActivityFields();
+calendarGrid.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const cell = e.target.closest(".day-cell");
+  if (!cell) return;
+  e.preventDefault();
+  openPlanDialog(cell.dataset.date);
+});
 
+planForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const kg = parseFloat(kgInput.value) || 0;
   try {
-    await upsertActivities(selectedDateKey, activities);
+    await upsertKg(selectedDateKey, kg);
     planDialog.close();
     renderCalendar();
-  } catch (error) {
-    alert("บันทึกไม่สำเร็จ: " + error.message);
+    renderDashboard();
+  } catch (err) {
+    alert("บันทึกไม่สำเร็จ: " + err.message);
   }
 });
 
 clearActivitiesButton.addEventListener("click", async () => {
   try {
-    await upsertActivities(selectedDateKey, []);
+    await upsertKg(selectedDateKey, 0);
     planDialog.close();
     renderCalendar();
-  } catch (error) {
-    alert("ล้างรายละเอียดไม่สำเร็จ: " + error.message);
+    renderDashboard();
+  } catch (err) {
+    alert("ล้างข้อมูลไม่สำเร็จ: " + err.message);
   }
 });
 
-closeDialogButton.addEventListener("click", () => planDialog.close());
-cancelPlanButton.addEventListener("click", () => planDialog.close());
+closeDialogButton.addEventListener("click",  () => planDialog.close());
+cancelPlanButton.addEventListener("click",   () => planDialog.close());
 
+// ── Init ──────────────────────────────────────────────────────
 async function initializeApp() {
   updateCropUi();
 
   if (!isSupabaseConfigured || !supabaseClient) {
     showAuth("กรุณาใส่ Supabase URL และ Anon Key ในไฟล์ config.js ก่อนใช้งาน");
-    authForm.querySelectorAll("input, button").forEach((element) => {
-      element.disabled = true;
-    });
+    authForm.querySelectorAll("input, button").forEach((el) => (el.disabled = true));
     return;
   }
 
   const { data, error } = await supabaseClient.auth.getSession();
-  if (error || !data.session) {
-    showAuth();
-    return;
-  }
+  if (error || !data.session) { showAuth(); return; }
 
   activeUser = data.session.user;
   showCalendar();
